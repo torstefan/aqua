@@ -29,6 +29,7 @@ local $main::hisTemp;
 local $main::hisHum;
 local $main::hisPres;
 local $main::logStatus;
+local $main::brand;
 my $text;
 
 use Device::SerialPort::Arduino;
@@ -84,7 +85,7 @@ sub spark_log {
         if ( $d_time > $log_int_in_sec ) {
             $logStatus .= "Logging values to sparkfun\n";
             $logStatus .= "$s_humidity $s_pressure $s_temp\n";
-            $s_spark_resp = spark_send();
+	        $s_spark_resp = spark_send();
 
             sleep(3);
             $s_humidity = undef;
@@ -117,7 +118,7 @@ sub spark_send {
         return `curl -X GET '${url}' 2>/dev/null`;
     }
     else {
-        return "NO INTERNET!\n";
+        return "NO INTERNETZ!\n";
     }
 
 }
@@ -237,11 +238,11 @@ sub displayTime {
 sub myProg {
     my $cui = new Curses::UI( -color_support => 1 );
 
-    my $win = $cui->add( "win", "Window", -border => 1, );
+    my $win = $cui->add( "win", "Window", -border => 1, -bfg => "red" );
 
     $main::label2 = $win->add(
         'Time', 'Label',
-        -width         => 35,
+        -width         => 33,
         -paddingspaces => 1,
     );
 
@@ -258,7 +259,7 @@ sub myProg {
         'LogStatus', 'Label',
         -y             => 7,
         -x             => 3,
-        -width         => 40,
+        -width         => 30,
         -height        => 10,
         -paddingspaces => 1,
         -text          => "STATUS:"
@@ -269,7 +270,7 @@ sub myProg {
         -y             => 2,
         -x             => 30,
         -width         => 20,
-        -height        => 30,
+        -height        => 10,
         -paddingspaces => 1,
     );
 
@@ -278,7 +279,7 @@ sub myProg {
         -y             => 2,
         -x             => 45,
         -width         => 20,
-        -height        => 30,
+        -height        => 10,
         -paddingspaces => 1,
     );
 
@@ -287,10 +288,17 @@ sub myProg {
         -y             => 2,
         -x             => 60,
         -width         => 20,
-        -height        => 30,
+        -height        => 10,
         -paddingspaces => 1,
     );
 
+    $main::brand = $win->add(
+        'Brand', 'Label',
+        -x             => 34,
+        -width         => 35,
+		-text		   => "DERP AQUAPONICS",
+		-bold			=> 1
+    );
     $cui->set_binding( sub { exit(0); }, "\cC" );
     $cui->set_timer( 'update_time', \&displayTime );
 

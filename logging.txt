@@ -1,0 +1,2 @@
+http://data.sparkfun.com/input/[publicKey]?private_key=[privateKey]&humidity=[value]&pressure=[value]&temp=[value]
+http://data.sparkfun.com/input/g6bMwKan7QtY50REgoxK?private_key=qzl96oj1RwfpZPWne1Rg&humidity=[value]&pressure=[value]&temp=[value]

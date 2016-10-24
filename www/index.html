@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- EXTERNAL LIBS-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://www.google.com/jsapi"></script>
+
+    <!-- EXAMPLE SCRIPT -->
+    <script>
+
+      // onload callback
+      function drawChart() {
+
+        var public_key = 'g6bMwKan7QtY50REgoxK';
+
+        // JSONP request
+        var jsonData = $.ajax({
+          url: 'https://data.sparkfun.com/output/' + public_key + '.json',
+          data: {page: 1},
+          dataType: 'jsonp',
+        }).done(function (results) {
+
+          var data = new google.visualization.DataTable();
+
+          data.addColumn('datetime', 'Time');
+          data.addColumn('number', 'Temp *C');
+          data.addColumn('number', 'Humidity %');
+
+          $.each(results, function (i, row) {
+            data.addRow([
+              (new Date(row.timestamp)),
+              parseFloat(row.temp),
+              parseFloat(row.humidity)
+            ]);
+          });
+
+          var chart = new google.visualization.LineChart($('#chart').get(0));
+
+          chart.draw(data, {
+            title: 'DERP Aquaponics - Temp and Humidity'
+           });
+
+          var data2 = new google.visualization.DataTable();
+
+          data2.addColumn('datetime', 'Time');
+          data2.addColumn('number', 'Pressure hPa');
+
+          $.each(results, function (i, row) {
+            data2.addRow([
+              (new Date(row.timestamp)),
+              parseFloat(row.pressure),
+            ]);
+          });
+
+          var chart2 = new google.visualization.LineChart($('#chart2').get(0));
+
+          chart2.draw(data2, {
+            title: 'DERP Aquaponics - Pressure'
+          });
+
+	});
+
+        // JSONP request
+        var jsonData = $.ajax({
+          url: 'https://data.sparkfun.com/output/' + public_key + '.json',
+          data: {'gte' :{'timestamp' : 'now - 3 days'}},
+          dataType: 'jsonp',
+        }).done(function (results) {
+
+
+          var data3 = new google.visualization.DataTable();
+
+          data3.addColumn('datetime', 'Time');
+          data3.addColumn('number', 'Temp *C');
+          data3.addColumn('number', 'Humidity %');
+
+          $.each(results, function (i, row) {
+            data3.addRow([
+              (new Date(row.timestamp)),
+              parseFloat(row.temp),
+              parseFloat(row.humidity)
+            ]);
+          });
+
+          var chart3 = new google.visualization.LineChart($('#chart3').get(0));
+
+          chart3.draw(data3, {
+            title: 'DERP Aquaponics - Temp and Humidity - Last day'
+           });
+
+          var data4 = new google.visualization.DataTable();
+
+          data4.addColumn('datetime', 'Time');
+          data4.addColumn('number', 'Pressure hPa');
+
+          $.each(results, function (i, row) {
+            data4.addRow([
+              (new Date(row.timestamp)),
+              parseFloat(row.pressure),
+            ]);
+          });
+
+          var chart4 = new google.visualization.LineChart($('#chart4').get(0));
+
+          chart4.draw(data4, {
+            title: 'DERP Aquaponics - Pressure - Last day'
+          });
+	});
+
+      }
+
+      // load chart lib
+      google.load('visualization', '1', {
+        packages: ['corechart']
+      });
+
+      // call drawChart once google charts is loaded
+      google.setOnLoadCallback(drawChart);
+
+    </script>
+
+  </head>
+  <body>
+    <div id="chart" style="width: 100%;"></div>
+    <div id="chart2" style="width: 100%;"></div>
+    <div id="chart3" style="width: 100%;"></div>
+    <div id="chart4" style="width: 100%;"></div>
+  </body>
+</html>

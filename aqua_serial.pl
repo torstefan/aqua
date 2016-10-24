@@ -87,7 +87,6 @@ sub spark_log {
             $logStatus .= "$s_humidity $s_pressure $s_temp\n";
 	        $s_spark_resp = spark_send();
 
-            sleep(3);
             $s_humidity = undef;
             $s_pressure = undef;
             $s_temp     = undef;
@@ -166,8 +165,8 @@ sub get_history_list {
             $list .= "-" . sprintf( "%.f", $seconds_ago / 60 ) . "m $v$type\n";
         }
 
-        # 1.5 hours
-        if ( $seconds_ago eq 8 * 675 ) {
+        # 1 hours
+        if ( $seconds_ago eq 8 * 450 ) {
             $list .=
               "-" . sprintf( "%.f", $seconds_ago / 60 / 60 ) . "h $v$type\n";
         }
@@ -195,6 +194,13 @@ sub get_history_list {
             $list .=
               "-" . sprintf( "%.f", $seconds_ago / 60 / 60 ) . "h $v$type\n";
         }
+        
+        # 48 hours
+        if ( $seconds_ago eq 8 * 10800 * 2 ) {
+            $list .=
+              "-" . sprintf( "%.f", $seconds_ago / 60 / 60 ) . "h $v$type\n";
+        }
+
 
     }
     return $list;
@@ -203,7 +209,7 @@ sub get_history_list {
 sub displayTime {
     my $rcv = $Arduino->receive();
     $main::label2->text(`date`);
-    if ( $rcv =~ m/Temperature\s=\s(\d{1,}\.\d{1,}).*/xm ) {
+    if ( $rcv =~ m/T=(\d{1,}\.\d{1,}).*/xm ) {
         my $v = $1;
         store_value( "*C", $v );
         my $d = `date "+%H:%M:%S"`;
@@ -211,13 +217,13 @@ sub displayTime {
 
         $text .= "Temp:     ${v}*C\n";
     }
-    if ( $rcv =~ m/Humidity\s=\s(\d{1,}\.\d{1,}).*/xm ) {
+    if ( $rcv =~ m/H=(\d{1,}\.\d{1,}).*/xm ) {
         my $v = $1;
         store_value( "%", $v );
 
         $text .= "Humidity: ${v}%\n";
     }
-    if ( $rcv =~ m/Pressure\s=\s(\d{1,}\.\d{1,}).*/xm ) {
+    if ( $rcv =~ m/P=(\d{1,}\.\d{1,}).*/xm ) {
         my $v = $1;
         store_value( "hPa", $v );
 
@@ -232,7 +238,7 @@ sub displayTime {
     #		$main::hisTemp->text("Temp\n");
     #		$main::hisHum->text("Humidity\n");
     #		$main::hisPres->text("Pressure\n");
-    sleep(1);
+    sleep(7);
 }
 
 sub myProg {

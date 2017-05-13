@@ -30,7 +30,8 @@ local $main::hisHum;
 local $main::hisPres;
 local $main::logStatus;
 local $main::brand;
-my $text;
+local $main::weatherRep;
+local $main::aquaRep;
 
 use Device::SerialPort::Arduino;
 
@@ -57,9 +58,11 @@ my $Arduino = Device::SerialPort::Arduino->new(
 my $s_humidity;
 my $s_pressure;
 my $s_temp;
-my $s_time         = 0;
-my $log_int_in_sec = 60;
-my $s_spark_resp   = "";
+my $s_ambience;
+my $s_proximity;
+my $s_time         	= 0;
+my $log_int_in_sec 	= 60;
+my $s_spark_resp   	= "";
 
 sub spark_log {
     my ( $type, $value ) = @_;
@@ -111,7 +114,7 @@ sub spark_send {
     $url .= "&pressure=$s_pressure";
     $url .= "&temp=$s_temp";
 
-    my $ping = `sudo ping -W1 -q -c1 8.8.8.8`;
+    my $ping = `sudo ping -W1 -q -c1 8.8.8.8 2>/dev/null`;
 
     if ( $ping =~ m/1\sreceived/xm ) {
         return `curl -X GET '${url}' 2>/dev/null`;
@@ -135,6 +138,65 @@ sub store_value {
     }
 }    ## --- end sub store_value
 
+sub get_wind_speed_d1h{
+	my $d_hpa = shift;
+
+	
+	if ( $d_hpa > 1.3 and $d_hpa < 2 ) {
+		return "6 - 7 Bft";
+	}
+	if ( $d_hpa > 2 and $d_hpa < 3.3 ) {
+		return "8 - 9 Bft";
+	}
+	if ( $d_hpa > 3.3 ) {
+		return "10+ Bft!";
+	}
+
+}
+
+sub get_wind_speed_d3h{
+	my $d_hpa = shift;
+
+	
+	if ( $d_hpa > 4 and $d_hpa < 6 ) {
+		return "6 - 7 Bft";
+	}
+	if ( $d_hpa > 6 and $d_hpa < 10 ) {
+		return "8 - 9 Bft";
+	}
+	if ( $d_hpa > 10 ) {
+		return "10+ Bft!";
+	}
+
+}
+
+my $current_hpa;
+sub weatherRep{
+	my $hpa = shift;
+	my $min_ago = shift;
+	my $d_hpa;
+	my $report = "NoData";
+
+	if ( $min_ago eq 0 ) {
+		$current_hpa = $hpa;
+		return "Current hPa: $hpa";
+	}
+	
+	if ( $min_ago eq 60 ) {
+		$d_hpa = ($hpa - $current_hpa);
+		$report =  "Delta hPa -1h". $d_hpa . 
+				"\n". get_wind_speed_d1h($d_hpa) ;
+		$report .= "\n";
+	}
+
+	if ( $min_ago eq (60 * 3) ) {
+		$d_hpa = ($hpa - $current_hpa);
+		$report .= "Delta hPa -3h". $d_hpa . 
+				"\n". get_wind_speed_d3h($d_hpa) ;
+	}
+	return $report;
+
+}
 sub get_history_list {
     my ($type) = @_;
     my $list = "NoData";
@@ -153,6 +215,9 @@ sub get_history_list {
         # 0 min
         if ( $seconds_ago eq 8 ) {
             $list .= "-" . ($seconds_ago) . "s $v$type\n";
+			if ( $type eq "hPa" ) {
+				$main::weatherRep->text("WEATHER\n" . weatherRep($v, 0));
+			}
         }
 
         # 1 min
@@ -169,12 +234,18 @@ sub get_history_list {
         if ( $seconds_ago eq 8 * 450 ) {
             $list .=
               "-" . sprintf( "%.f", $seconds_ago / 60 / 60 ) . "h $v$type\n";
+			if ( $type eq "hpa" ) {
+				$main::weatherRep->text("WEATHER\n" .weatherRep($v, 60));
+			}
         }
 
         # 3 hours
         if ( $seconds_ago eq 8 * 1350 ) {
             $list .=
               "-" . sprintf( "%.f", $seconds_ago / 60 / 60 ) . "h $v$type\n";
+			if ( $type eq "hpa" ) {
+				$main::weatherRep->text("WEATHER\n" .weatherRep($v, 60 * 3));
+			}
         }
 
         # 6 hours
@@ -207,6 +278,7 @@ sub get_history_list {
 }    ## --- end sub get_history_list
 
 sub displayTime {
+	my $text;
     my $rcv = $Arduino->receive();
     $main::label2->text(`date`);
     if ( $rcv =~ m/T=(\d{1,}\.\d{1,}).*/xm ) {
@@ -228,9 +300,29 @@ sub displayTime {
         store_value( "hPa", $v );
 
         $text .= "Pressure: ${v}hPa\n";
+    }
+
+    if ( $rcv =~ m/Lx=(\d{1,}).*/xm ) {
+        my $v = $1;
+        store_value( "lx", $v );
+
+        $text .= "Ambience: ${v}lx\n";
+    }
+
+
+    if ( $rcv =~ m/Pr=(\d{1,}).*/xm ) {
+        my $v = $1;
+        store_value( "waterLev", $v );
+
+        $text .= "Water lvl: ${v}\n";
         $main::label->text($text);
         $text = "";
     }
+
+	
+	if ( $rcv =~ m/EV=(.*?)\s/xm ) {
+		$main::aquaRep->text($1);
+	}
     $main::hisHum->text( "Humidity\n" . get_history_list("%") );
     $main::hisTemp->text( "Temp\n" . get_history_list("*C") );
     $main::hisPres->text( "Pressure\n" . get_history_list("hPa") );
@@ -238,7 +330,7 @@ sub displayTime {
     #		$main::hisTemp->text("Temp\n");
     #		$main::hisHum->text("Humidity\n");
     #		$main::hisPres->text("Pressure\n");
-    sleep(7);
+    sleep(1);
 }
 
 sub myProg {
@@ -257,18 +349,37 @@ sub myProg {
         -y             => 2,
         -x             => 3,
         -width         => 30,
-        -height        => 4,
+        -height        => 6,
         -paddingspaces => 1,
         -bold          => 1
     );
     $main::logStatus = $win->add(
         'LogStatus', 'Label',
-        -y             => 7,
+        -y             => 9,
+        -x             => 3,
+        -width         => 30,
+        -height        => 6,
+        -paddingspaces => 1,
+        -text          => "STATUS:"
+    );
+
+    $main::weatherRep = $win->add(
+        'WeatherRep', 'Label',
+        -y             => 15,
+        -x             => 3,
+        -width         => 30,
+        -height        => 3,
+        -paddingspaces => 1,
+        -text          => "WEATHER"
+    );
+    $main::aquaRep = $win->add(
+        'AquaRep', 	'Label',
+        -y             => 22,
         -x             => 3,
         -width         => 30,
         -height        => 10,
         -paddingspaces => 1,
-        -text          => "STATUS:"
+        -text          => "FISK!"
     );
 
     $main::hisHum = $win->add(

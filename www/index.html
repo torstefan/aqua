@@ -6,6 +6,7 @@
     <script src="https://www.google.com/jsapi"></script>
 
     <!-- EXAMPLE SCRIPT -->
+
     <script>
 
       // onload callback
@@ -63,7 +64,7 @@
         // JSONP request
         var jsonData = $.ajax({
           url: 'https://data.sparkfun.com/output/' + public_key + '.json',
-          data: {'gte' :{'timestamp' : 'now - 3 days'}},
+          data: {'gte' :{'timestamp' : 'now - '+dayz+' days'}},
           dataType: 'jsonp',
         }).done(function (results) {
 
@@ -108,7 +109,6 @@
 	});
 
       }
-
       // load chart lib
       google.load('visualization', '1', {
         packages: ['corechart']
@@ -118,14 +118,178 @@
       google.setOnLoadCallback(drawChart);
 
     </script>
+    <style>
+      #options{
+        z-index: 5000;
+        position: absolute;
+        top: 1px;
+        left: 1px;
+        width: 150px;
+        height: 150px;
+        background: linear-gradient(135deg, #e2e2e2 0%,#dbdbdb 50%,#d1d1d1 51%,#fefefe 100%);
+        border-radius: 50%;
+        border: 1px solid #333333;
+        box-shadow: 5px 5px 2.5px 0px rgba(0,0,0,0.27);
+        transition: transform .3s linear 0s;
+      }
 
+      #options label{
+        color: #333333;
+      }
+      .scaleOne{
+        transform: scale(1);
+      }
+
+      .scaleZero{
+        transform: scale(0);
+      }
+      #twoers{
+        width: 110px;
+        height: 50px;
+        overflow: auto;
+        margin: auto;
+        position: absolute;
+        top: 0; left: 0; bottom: 0; right: 0;
+      }
+
+      #twoers input{
+        width: 50px;
+      }
+
+      .infoBox{
+        position: relative;
+        top: 0;
+        left: 0;
+        margin: 1px 0 0 1px;
+        width: 30px;
+        height: 30px;
+        background: linear-gradient(135deg, #e2e2e2 0%,#dbdbdb 50%,#d1d1d1 51%,#fefefe 100%);
+        border: 1px solid #76717a;
+        border-radius: 15%;
+        z-index: 100;
+      }
+      .dot{
+        position: relative;
+        width : 6px;
+        height: 7px;
+        top: 12%;
+        margin: 0 auto;
+        background-color: #666d94;
+        border-radius: 20%;
+      }
+      .stick{
+        position: relative;
+        width : 6px;
+        height: 15px;
+        top: 20%;
+        margin: 0 auto;
+        background-color: #666d94;
+        border-radius: 20%;
+      }
+      .infoText{
+        position: relative;
+        top: -23px;
+        left: 27px;
+        height: 30px;
+        width: 0px;
+        background-color: #e2e2e2;
+        border: 1px solid #76717a;
+        display: none;
+      }
+      .infoText p{
+        position: relative;
+        margin-top: 4px;
+        margin-left: 5px;
+        color: #333333;
+        font-weight: bold;
+      }
+    </style>
   </head>
   <body>
+    <div id="options" class="scaleZero">
+     <div id="twoers">
+      <label>Number of days:</label>
+      <input id="inputvalue" type="number"></input>
+      <button onclick="setDayz()">Set!</button>
+     </div>
+   </div>
+
+    <div class="infoBox" id="info">
+     <div class="dot"></div>
+     <div class="stick"></div>
+     <div class="infoText" id="iText"><p>Hold Ctrl + left Mbtn for options</p></div>
+    </div>
+
     <div id="chart" style="width: 100%;"></div>
     <div id="chart2" style="width: 100%;"></div>
     <div id="chart3" style="width: 100%;"></div>
     <div id="chart4" style="width: 100%;"></div>
 <center><a href="http://www.yr.no/place/Norway/Rogaland/Stavanger/Stavanger/hour_by_hour_detailed.html">Yr.no - Stavanger - Detaljert</a></center>
 <center><a href="https://github.com/torstefan/aqua">Github - Prosjektfiler</a></center>
+
+<script  type="text/javascript">
+var dayz = 1;
+var imp = document.getElementById('inputvalue');
+function setDayz() {
+  if(imp.value < 1){
+    dayz = 1;
+
+    }
+  else{
+    dayz = imp.value;
+    }
+  drawChart();
+  console.log(dayz);
+}
+window.onload = function() {
+
+  var menu =  document.getElementById('options');
+  var info = document.getElementById('info');
+  var iText = document.getElementById('iText');
+
+  function menuTransform(posX, posY){
+    if(menu.className === "scaleZero"){
+      menu.style.left = posX-100+"px";
+      menu.style.top = posY-100+"px";
+      menu.className = "scaleOne";
+    }
+    else{
+      menu.className = "scaleZero";
+    }
+  }
+
+  info.addEventListener("mouseover", function(einfo){
+    iText.style.display ="inline-block";
+    iText.style.width = 240+"px"; ///inline-block;
+  }, false );
+
+  info.addEventListener("mouseleave", function(einfo){
+    iText.style.display ="none";
+    iText.style.width = 0+"px"; ///inline-block;
+  }, false );
+
+  window.addEventListener("keydown", checkKeyPress, false);
+  function checkKeyPress(key){
+    if(key.keyCode == "13" && menu.className === "scaleOne"){
+      setDayz();
+    }
+    else if (key.keyCode == "27") {
+      menu.className = "scaleZero";
+    }
+  }
+
+  window.addEventListener("mousedown", showMenu, false);
+  function showMenu(e) {
+    var posX = e.clientX;
+    var posY = e.clientY;
+    if(e.ctrlKey){
+     menuTransform(posX, posY);
+    }
+    else {
+      return;
+    }
+  }
+};
+</script>
   </body>
 </html>

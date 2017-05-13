@@ -2,3 +2,4 @@
 .pioenvs
 .piolibdeps
 stream.sparkfun.com.json
+lib/encoder/.git
